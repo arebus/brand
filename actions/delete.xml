@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+
+<actions appVersion="7.2" description="Delete brand {brand_id} from Database">
+  
+  
+  <options description="Delete brand from Database" help="Delete brand from Database">
+    <option name="brand_id" help="brand that you want to delete" type="int"></option>
+  </options>
+  
+	<step action_type="openDBConnection" connection_name="connectionForDelete" description="Connect to database">
+	 <host>127.0.0.1</host>
+	 <port>5536</port>
+	 <user_name>msandbox</user_name>
+	 <password>msandbox</password>
+	 <database>optionfair_trading</database>
+	</step>
+	
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Setting up SQL variables">
+	 <query>
+	   set @BrandId={brand_id};
+	   set autocommit=0;
+	 </query>
+	</step>
+	
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from email_templates">
+	  <query>
+	    delete from email_templates
+	    where brand_id=@BrandId;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from asset_country_brand_rel">
+	  <query>
+	   delete from asset_country_brand_rel
+	   where brand_id = @BrandId;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from sub_market_country_brand_rel">
+	  <query>
+	   delete from sub_market_country_brand_rel
+	   where brand_id = @BrandId;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from wire_information">
+	  <query>
+	   delete from wire_information
+           where brand_id = @BrandId;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from account_level_brand_rel">
+	  <query>
+	   delete from account_level_brand_rel
+           where brand_id = @BrandId;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from currency_country_limit">
+	  <query>
+	   delete from currency_country_limit
+           where brand_id = @BrandId;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from language_brand_rel">
+	  <query>
+	   delete from language_brand_rel
+           where brand_id = @BrandId;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from currency_brand_rel">
+	  <query>
+	   delete from currency_brand_rel
+           where brand_id = @BrandId;
+	  </query>
+	</step>
+	
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from currency_brand_rel">
+	  <query>
+	   delete from brand_skin_rel
+           where brand_id = @BrandId;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from brand_psp_rel">
+	  <query>
+	   delete from brand_psp_rel
+           where brand_id = @BrandId;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from brand">
+	  <query>
+	   delete from brand
+           where brand_id = @BrandId;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionForDelete" description="Commiting">
+	  <query>
+	    commit;
+	    set autocommit=1;
+	  </query>
+	</step>
+
+</actions>

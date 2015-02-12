@@ -1,0 +1,151 @@
+<?xml version="1.0"?>
+
+<actions appVersion="7.2" description="Exporting brand {brand_id}">
+  
+  
+  <options help="Export brand to xml file" description="Export brand to XML file">
+    <option name="brand_id" help="Exporting brand ID" type="int"></option>
+    <option name="file_name" help="output file name"></option>
+    <option name="--wrap" help="wrap sensitive data" action="store_true" default="False"></option>
+  </options>
+  
+	<step action_type="openDBConnection" connection_name="connectionExport" description="Connect to database">
+		<host>qa-full-papaya.optionhosts.com</host>
+		<port>3306</port>
+		<user_name>rebus</user_name>
+		<password>rebuspassword</password>
+		<database>optionfair_trading</database>
+	</step>
+	
+	<step action_type="executeSQL" connection_name="connectionExport" description="Setting up SQL variables">
+		<query>
+			set @sourceBrandId={brand_id};
+			set @wrap_data='{wrap}';
+			/* wrap email in brand table */
+			set @mail_host='smtp.gmail.com';
+			set @mail_username='support@optionfair.com';
+			set @mail_password='supp3e4r';
+			set @mail_host_noreply='smtp.gmail.com';
+			set @mail_username_noreply='nsupport@optionfair.com';
+			set @mail_password_noreply='supp3e4r';
+			set @mail_display_name_noreply='nr_support@optionfair.com';
+		</query>
+	</step>
+	
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="brand" file_name="{file_name}" description="Exporting brand">
+		<query>
+		<![CDATA[select id ,operator_id, name, type, cpa, revshare, turnover, identifier,'' as gn_tc, '' as page_load_gn_tc,reg_service_url, if(@wrap_data='True', @mail_host, mail_host) as mail_host, if(@wrap_data='True', @mail_username, mail_username) as mail_username, if(@wrap_data='True', @mail_password, mail_password) as mail_password, mail_display_name, send_mails, default_skin, demo_account_days, customer_demo_start_balance, employee_demo_start_balance, send_secured_mails, deposit_amount_required_doc, num_days_till_deactivate, withdrawal_life_expectancy, login_attemps_for_captcha, assign_lead_to_default, if(@wrap_data='True', @mail_host_noreply, mail_host_noreply) as mail_host_noreply, if(@wrap_data='True', @mail_username_noreply, mail_username_noreply) as mail_username_noreply, if(@wrap_data='True', @mail_password_noreply, mail_password_noreply) as mail_password_noreply, if(@wrap_data='True', @mail_display_name_noreply, mail_display_name_noreply) as mail_display_name_noreply, server_name, is_active
+			 from optionfair_trading.brand
+			 where id = @sourceBrandId]]>
+		</query>
+	</step>
+
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="brand_psp_rel" file_name="{file_name}" description="Exporting brand_psp_rel">
+		<query>
+	               <![CDATA[select psp_id, brand_id, psp_merchant_params, merchant_id, merchant_key, sort, priority
+				from brand_psp_rel
+				where brand_id=@sourceBrandId]]>
+		</query>
+        </step>
+
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="brand_skin_rel" file_name="{file_name}" description="Exporting brand_skin_rel">
+		<query>
+	               <![CDATA[select brand_id, skin, controlled_by_user, IF(INSTR(jsp, '/') = 0, jsp, CONCAT(brand_id, SUBSTR(jsp, INSTR(jsp, '/')))) as jsp, lead_jsp, has_news
+				from brand_skin_rel
+				where brand_id = @sourceBrandId]]>
+		</query>
+        </step>
+	
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="currency" file_name="{file_name}" description="Exporting currencies related to brand">
+		<query>
+	               <![CDATA[select c.currency_id, c.symbol, c.display_name, c.display_symbol, c.Normalized_to_usd, c.asset_id_for_normalize, c.normalize_type
+				from currency c inner join currency_brand_rel br on br.currency_id = c.currency_id
+				where brand_id = @sourceBrandId]]>
+		</query>
+        </step>
+
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="currency_brand_rel" file_name="{file_name}" description="Exporting currency_brand_rel">
+		<query>
+	               <![CDATA[select currency_id, brand_id
+				from currency_brand_rel
+				where brand_id=@sourceBrandId]]>
+		</query>
+        </step>
+
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="brand_regulation_rel" file_name="{file_name}" description="Exporting brand_regulation_rel">
+		<query>
+	               <![CDATA[select brand_id, regulation, withdrawal_policy, max_total_deposit_policy
+				from brand_regulation_rel
+				where brand_id=@sourceBrandId]]>
+		</query>
+        </step>
+
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="instrument_type_instrument_type_super_rel" file_name="{file_name}" description="Exporting instrument_type_instrument_type_super_rel">
+		<query>
+	               <![CDATA[select instrument_type_id, instrument_type_super_id, brand_id, sort
+				from instrument_type_instrument_type_super_rel
+				where brand_id=@sourceBrandId]]>
+		</query>
+        </step>
+
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="language_brand_rel" file_name="{file_name}" description="Exporting language_brand_rel">
+		<query>
+	               <![CDATA[select brand_id, language_id
+				from language_brand_rel
+				where brand_id = @sourceBrandId]]>
+		</query>
+        </step>
+
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="currency_country_limit" file_name="{file_name}" description="Exporting currency_country_limit">
+		<query>
+	               <![CDATA[select currency_id, country_iso, min_highlow_trade_amount, max_highlow_trade_amount, min_onetouch_trade_amount, max_onetouch_trade_amount, min_boundary_trade_amount, max_boundary_trade_amount, max_user_exposure, min_deposit, min_withdraw, min_withdraw_for_fee, brand_id, max_daily_deposit, max_weekly_deposit, max_monthly_deposit, min_ftd_deposit , min_highyield_trade_amount , max_highyield_trade_amount
+				from currency_country_limit
+				where brand_id = @sourceBrandId]]>
+		</query>
+        </step>
+
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="account_level" file_name="{file_name}" description="Exporting account_levels connected to brand">
+		<query>
+	               <![CDATA[select al.id,al.name,al.percentage,al.exposure,al.limit as ,al.is_required,al.min_deal_size,al.fx_spread_bonus,al.deposit_limit
+				from account_level al inner join account_level_brand_rel ab on al.id = ab.account_level_id
+				where ab.brand_id = @sourceBrandId]]>
+		</query>
+        </step>
+
+
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="account_level_brand_rel" file_name="{file_name}" description="Exporting account_level_brand_rel">
+		<query>
+	               <![CDATA[select brand_id, account_level_id
+				from account_level_brand_rel
+				where brand_id = @sourceBrandId]]>
+		</query>
+        </step>
+
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="wire_information" file_name="{file_name}" description="Exporting wire_information">
+		<query>
+	               <![CDATA[select brand_id, currency_id, psp_id, beneficiary_name, bank_name, bank_address, swift, account_number, iban, intermediary_bank, bic, sorting_code
+				from wire_information
+				where brand_id = @sourceBrandId]]>
+		</query>
+        </step>
+
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="sub_market_country_brand_rel" file_name="{file_name}" description="Exporting sub_market_country_brand_rel">
+		<query>
+	               <![CDATA[select sub_market_id, country_iso, brand_id, item_order
+				from sub_market_country_brand_rel
+				where brand_id = @sourceBrandId]]>
+		</query>
+        </step>
+	
+	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="asset_country_brand_rel" file_name="{file_name}" description="Exporting asset_country_brand_rel">
+		<query>
+	               <![CDATA[select asset_id, country_iso, brand_id, item_order, site_default
+				from asset_country_brand_rel
+				where brand_id = @sourceBrandId]]>
+		</query>
+        </step>
+
+
+	<step action_type="writeXML" file_name="{file_name}" description="Save data to xml file"></step>
+
+</actions>
