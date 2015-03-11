@@ -106,7 +106,7 @@
 
 	<step action_type="exportSQLDataToXML" connection_name="connectionExport" table_name="account_level" file_name="{file_name}" description="Exporting account_levels connected to brand">
 		<query>
-	               <![CDATA[select al.id,al.name,al.percentage,al.exposure,al.limit as ,al.is_required,al.min_deal_size,al.fx_spread_bonus,al.deposit_limit
+	               <![CDATA[select al.id,al.name,al.percentage,al.exposure,al.`limit`,al.is_required,al.min_deal_size,al.fx_spread_bonus,al.deposit_limit
 				from account_level al inner join account_level_brand_rel ab on al.id = ab.account_level_id
 				where ab.brand_id = @sourceBrandId]]>
 		</query>
