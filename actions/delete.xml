@@ -8,10 +8,10 @@
   </options>
   
 	<step action_type="openDBConnection" connection_name="connectionForDelete" description="Connect to database">
-	 <host>127.0.0.1</host>
-	 <port>5536</port>
-	 <user_name>msandbox</user_name>
-	 <password>msandbox</password>
+	 <host>date</host>
+	 <port>3306</port>
+	 <user_name>aleksandrr</user_name>
+	 <password>mysqlpasswd</password>
 	 <database>optionfair_trading</database>
 	</step>
 	
@@ -95,7 +95,7 @@
 	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from brand">
 	  <query>
 	   delete from brand
-           where brand_id = @BrandId;
+           where id = @BrandId;
 	  </query>
 	</step>
 

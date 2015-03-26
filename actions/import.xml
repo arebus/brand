@@ -4,7 +4,7 @@
   
   <options help="Import brand from xml file" description="Import brand from XML file">
     <option name="file_name" help="input file name"></option>
-    <option name="--oprator_id" help="New operator id" type="int" required='True'></option>
+    <option name="--operator_id" help="New operator id" type="int" required='True'></option>
     <option name="--brand_id" help="New brand ID" type="int"></option>
     <option name="--brand_identifier" help="New brand identifier(e.g. *.somebrand.com)" default=""></option>
     <option name="--brand_name" help="New brand name" default=""></option>    
@@ -12,10 +12,10 @@
   </options>
 
 	<step action_type="openDBConnection" connection_name="connectionImport" description="Connect to database">
-		<host>127.0.0.1</host>
-		<port>5536</port>
-		<user_name>msandbox</user_name>
-		<password>msandbox</password>
+		<host>date</host>
+		<port>3306</port>
+		<user_name>aleksandrr</user_name>
+		<password>mysqlpasswd</password>
 		<database>optionfair_trading</database>
 	</step>
 	

@@ -10,10 +10,10 @@
   </options>
   
 	<step action_type="openDBConnection" connection_name="connectionExport" description="Connect to database">
-		<host>72.46.129.99</host>
+		<host>date</host>
 		<port>3306</port>
-		<user_name>rebus</user_name>
-		<password>rebuspassword</password>
+		<user_name>aleksandrr</user_name>
+		<password>mysqlpasswd</password>
 		<database>optionfair_trading</database>
 	</step>
 	
