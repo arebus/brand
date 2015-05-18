@@ -266,11 +266,11 @@ def main():
 # Do actionOpenDBConnection
     if action_type == actionOpenDBConnection:
       logging.info("Action type = openDBConnection")
-      host = step.find('host').text
-      port = int(step.find('port').text)
-      user_name = step.find('user_name').text
-      password = step.find('password').text
-      database = step.find('database').text
+      host = replaceKeywords(step.find('host').text, replaceDictionary)
+      port = int(replaceKeywords(step.find('port').text, replaceDictionary))
+      user_name = replaceKeywords(step.find('user_name').text, replaceDictionary)
+      password = replaceKeywords(step.find('password').text, replaceDictionary)
+      database = replaceKeywords(step.find('database').text, replaceDictionary)
       openDBConnection(_conn_name=step.get('connection_name'), _host=host, _port=port, _user_name=user_name, _password=password, _database=database)
 # Do actionImportSQLDataToXML
     elif action_type == actionExportSQLDataToXML:

@@ -9,6 +9,10 @@
     <option name="--brand_identifier" help="New brand identifier(e.g. *.somebrand.com)" default=""></option>
     <option name="--brand_name" help="New brand name" default=""></option>    
     <option name="--wrap" help="wrap sensitive data" action="store_true" default="False"></option>
+    <option name="--db_user" help="Database user" required='True'></option>
+    <option name="--db_password" help="Database password" required='True'></option>
+    <option name="--db_host" help="Database host" required='True'></option>
+    <option name="--db_port" help="Database port" default="3306"></option>
   </options>
 
 	<step action_type="openDBConnection" connection_name="connectionImport" description="Connect to database">
