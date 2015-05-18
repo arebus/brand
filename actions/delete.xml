@@ -8,11 +8,11 @@
   </options>
   
 	<step action_type="openDBConnection" connection_name="connectionForDelete" description="Connect to database">
-	 <host>date</host>
-	 <port>3306</port>
-	 <user_name>aleksandrr</user_name>
-	 <password>mysqlpasswd</password>
-	 <database>optionfair_trading</database>
+                <host>{db_host}</host>
+                <port>{db_port}</port>
+                <user_name>{db_user}</user_name>
+                <password>{db_password}</password>
+                <database>optionfair_trading</database>
 	</step>
 	
 	<step action_type="executeSQL" connection_name="connectionForDelete" description="Setting up SQL variables">
