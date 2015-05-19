@@ -6,8 +6,8 @@
     <option name="file_name" help="input file name"></option>
     <option name="--operator_id" help="New operator id" type="int" required='True'></option>
     <option name="--brand_id" help="New brand ID" type="int"></option>
-    <option name="--brand_identifier" help="New brand identifier(e.g. *.somebrand.com)" default=""></option>
-    <option name="--brand_name" help="New brand name" default=""></option>    
+    <option name="--brand_identifier" help="New brand identifier(e.g. *.somebrand.com)" default="None"></option>
+    <option name="--brand_name" help="New brand name" default="None"></option>    
     <option name="--wrap" help="wrap sensitive data" action="store_true" default="False"></option>
     <option name="--db_user" help="Database user" required='True'></option>
     <option name="--db_password" help="Database password" required='True'></option>

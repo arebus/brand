@@ -240,7 +240,6 @@ def main():
   filterwarnings('ignore', category = db.Warning)
 
   # Its bad idea. Needs to be done in some other way
-  
   try:
     tree = ET.parse(actionfile)
   except IOError, e:

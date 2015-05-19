@@ -5,6 +5,10 @@
   
   <options description="Delete brand from Database" help="Delete brand from Database">
     <option name="brand_id" help="brand that you want to delete" type="int"></option>
+    <option name="--db_user" help="Database user" required='True'></option>
+    <option name="--db_password" help="Database password" required='True'></option>
+    <option name="--db_host" help="Database host" required='True'></option>
+    <option name="--db_port" help="Database port" default="3306"></option>
   </options>
   
 	<step action_type="openDBConnection" connection_name="connectionForDelete" description="Connect to database">
@@ -91,6 +95,20 @@
            where brand_id = @BrandId;
 	  </query>
 	</step>
+
+        <step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from brand_regualtion_rel">
+          <query>
+           delete from brand_regulation_rel
+           where brand_id = @BrandId;
+          </query>
+        </step>
+
+        <step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from brand_regualtion_rel">
+          <query>
+           delete from wire_information
+           where brand_id = @BrandId;
+          </query>
+        </step>
 
 	<step action_type="executeSQL" connection_name="connectionForDelete" description="Deleting from brand">
 	  <query>
