@@ -1,0 +1,532 @@
+<?xml version="1.0"?>
+
+<actions appVersion="7.2" description="Importing brand">
+  
+  <options help="Import brand from xml file" description="Import brand from XML file">
+    <option name="file_name" help="input file name"></option>
+    <option name="--operator_id" help="New operator id" type="int" required='True'></option>
+    <option name="--brand_id" help="New brand ID" type="int"></option>
+    <option name="--brand_identifier" help="New brand identifier(e.g. *.somebrand.com)" default="None"></option>
+    <option name="--brand_name" help="New brand name" default="None"></option>    
+    <option name="--wrap" help="wrap sensitive data" action="store_true" default="False"></option>
+    <option name="--db_user" help="Database user" required='True'></option>
+    <option name="--db_password" help="Database password" required='True'></option>
+    <option name="--db_host" help="Database host" required='True'></option>
+    <option name="--db_port" help="Database port" default="3306"></option>
+  </options>
+
+	<step action_type="openDBConnection" connection_name="connectionImport" description="Connect to database">
+                <host>{db_host}</host>
+                <port>{db_port}</port>
+                <user_name>{db_user}</user_name>
+                <password>{db_password}</password>
+                <database>optionfair_trading</database>
+	</step>
+	
+	<step action_type="executeSQL" connection_name="connectionImport" description="Createing temporary tables">
+	  <query>
+create temporary table temp_brand (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  parent_id int(11) NOT NULL DEFAULT '1',
+  operator_id int(10) unsigned NOT NULL,
+  name varchar(45) NOT NULL,
+  type varchar(45) NOT NULL,
+  cpa int(10) unsigned NOT NULL,
+  revshare double NOT NULL,
+  turnover double NOT NULL,
+  identifier varchar(255) NOT NULL,
+  gn_tc varchar(45) NOT NULL,
+  page_load_gn_tc varchar(45) NOT NULL,
+  reg_service_url varchar(256) DEFAULT NULL,
+  mail_host varchar(100) NOT NULL,
+  mail_username varchar(100) NOT NULL,
+  mail_password varchar(100) NOT NULL,
+  mail_display_name varchar(30) DEFAULT NULL,
+  send_mails bit(1) NOT NULL DEFAULT b'1',
+  default_skin varchar(45) DEFAULT 'standart',
+  demo_account_days int(10) unsigned NOT NULL DEFAULT '3',
+  customer_demo_start_balance bigint(20) unsigned NOT NULL DEFAULT '100000',
+  employee_demo_start_balance bigint(20) unsigned NOT NULL DEFAULT '100000',
+  send_secured_mails bit(1) NOT NULL DEFAULT b'1',
+  deposit_amount_required_doc bigint(20) unsigned NOT NULL DEFAULT '50000',
+  num_days_till_deactivate int(10) unsigned NOT NULL DEFAULT '10',
+  withdrawal_life_expectancy int(10) unsigned NOT NULL,
+  login_attemps_for_captcha int(10) unsigned NOT NULL DEFAULT '3',
+  assign_lead_to_default bit(1) NOT NULL DEFAULT b'1',
+  mail_host_noreply varchar(100) NOT NULL,
+  mail_username_noreply varchar(100) NOT NULL,
+  mail_password_noreply varchar(100) NOT NULL,
+  mail_display_name_noreply varchar(30) DEFAULT NULL,
+  server_name varchar(255) DEFAULT NULL,
+  is_active bit(1) NOT NULL DEFAULT b'1',
+  app_location varchar(45) NOT NULL DEFAULT 'app',
+  roll_over_commission double NOT NULL DEFAULT '0',
+  roll_over_support bit(1) NOT NULL DEFAULT b'1',
+  roll_over_new_position_min_value double NOT NULL DEFAULT '0',
+  tax_percent double NOT NULL DEFAULT '0',
+  regulation_type int(11) NOT NULL DEFAULT '1640',
+  default_buy_mode int(11) NOT NULL DEFAULT '320',
+  wp_url varchar(255) DEFAULT NULL,
+  tracking_selection_policy_id int(10) unsigned NOT NULL DEFAULT '77',
+  sensitive_data_visible tinyint(1) NOT NULL DEFAULT '1',
+  is_forex_enabled bit(1) NOT NULL DEFAULT b'0',
+  is_ladder_trading_enabled bit(1) NOT NULL DEFAULT b'0',
+  order_market_mode int(11) unsigned NOT NULL DEFAULT '1650',
+  psp_criteria_priority varchar(20) NOT NULL DEFAULT 'none',
+  risk int(11) NOT NULL DEFAULT '1666',
+  default_forex_mode bit(1) NOT NULL DEFAULT b'0',
+  PRIMARY KEY (id)
+);
+
+create temporary table temp_brand_psp_rel (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  psp_id int(10) unsigned NOT NULL,
+  brand_id int(10) unsigned NOT NULL,
+  psp_merchant_params varchar(2048) DEFAULT NULL,
+  merchant_id varchar(40) DEFAULT NULL,
+  merchant_key varchar(100) DEFAULT NULL,
+  sort int(10) unsigned NOT NULL,
+  is_token_service bit(1) NOT NULL DEFAULT b'0',
+  priority int(10) NOT NULL DEFAULT '0',
+  PRIMARY KEY (id)
+);
+
+create temporary table temp_brand_skin_rel (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  brand_id int(10) unsigned NOT NULL,
+  skin varchar(45) NOT NULL,
+  controlled_by_user bit(1) NOT NULL DEFAULT b'1',
+  jsp varchar(45) NOT NULL DEFAULT 'HomePage',
+  lead_jsp varchar(45) NOT NULL DEFAULT 'LeadBanner',
+  has_news bit(1) NOT NULL DEFAULT b'0',
+  PRIMARY KEY (id)
+);
+
+create temporary table temp_currency (
+  currency_id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  symbol varchar(10) NOT NULL,
+  display_name varchar(25) DEFAULT NULL,
+  display_symbol varchar(2) NOT NULL,
+  Normalized_to_usd double unsigned NOT NULL,
+  asset_id_for_normalize int(10) NOT NULL,
+  normalize_type varchar(20) NOT NULL,
+  num int(3) NOT NULL,
+  PRIMARY KEY (currency_id)
+);
+
+create temporary table temp_currency_brand_rel (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  currency_id int(10) unsigned NOT NULL,
+  brand_id int(10) unsigned NOT NULL,
+  withdrawal_fee bigint(20) NOT NULL DEFAULT '0',
+  sort_id int(10) NOT NULL,
+  use_in_reg tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (id)
+);
+
+create temporary table temp_brand_regulation_rel (
+  id int(10) NOT NULL AUTO_INCREMENT,
+  brand_id int(10) NOT NULL,
+  regulation int(10) NOT NULL,
+  withdrawal_policy int(10) NOT NULL,
+  max_total_deposit_policy int(10) NOT NULL DEFAULT '1680',
+  PRIMARY KEY (id),
+  UNIQUE KEY temp_brand_regulation_unique (brand_id,regulation)
+);
+
+create temporary table temp_instrument_type_instrument_type_super_rel (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  instrument_type_id int(10) unsigned NOT NULL,
+  instrument_type_super_id int(10) unsigned NOT NULL,
+  brand_id int(10) DEFAULT NULL,
+  sort int(10) DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+
+create temporary table temp_language_brand_rel (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  brand_id int(10) unsigned NOT NULL,
+  language_id int(10) unsigned NOT NULL,
+  sort_id int(10) unsigned NOT NULL,
+  PRIMARY KEY (id)
+);
+
+create temporary table temp_currency_country_limit (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  currency_id int(11) NOT NULL,
+  country_iso char(2) DEFAULT NULL,
+  min_highlow_trade_amount bigint(20) unsigned NOT NULL,
+  max_highlow_trade_amount bigint(20) NOT NULL,
+  min_onetouch_trade_amount bigint(20) unsigned NOT NULL,
+  max_onetouch_trade_amount bigint(20) unsigned NOT NULL,
+  min_boundary_trade_amount bigint(20) unsigned NOT NULL,
+  max_boundary_trade_amount bigint(20) unsigned NOT NULL,
+  max_user_exposure bigint(20) unsigned NOT NULL,
+  min_deposit bigint(20) unsigned NOT NULL DEFAULT '1000',
+  min_withdraw bigint(20) unsigned NOT NULL DEFAULT '1000',
+  min_withdraw_for_fee bigint(20) unsigned NOT NULL DEFAULT '25000',
+  brand_id int(10) unsigned NOT NULL,
+  max_daily_deposit bigint(20) unsigned NOT NULL,
+  max_weekly_deposit bigint(20) unsigned NOT NULL,
+  max_monthly_deposit bigint(20) unsigned NOT NULL,
+  min_ftd_deposit bigint(20) unsigned NOT NULL DEFAULT '1000',
+  min_highyield_trade_amount bigint(20) unsigned NOT NULL,
+  max_highyield_trade_amount bigint(20) unsigned NOT NULL,
+  min_shortterm_trade_amount bigint(20) unsigned NOT NULL,
+  max_shortterm_trade_amount bigint(20) unsigned NOT NULL,
+  min_forex_trade_amount bigint(20) unsigned NOT NULL,
+  max_forex_trade_amount bigint(20) unsigned NOT NULL,
+  max_total_deposit_amount_for_docs bigint(20) unsigned NOT NULL DEFAULT '100000',
+  is_short_form_cc_deposit bit(1) NOT NULL DEFAULT b'0',
+  PRIMARY KEY (id)
+);
+
+create temporary table temp_account_level_brand_rel (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  brand_id int(10) unsigned NOT NULL,
+  account_level_id int(10) unsigned NOT NULL,
+  PRIMARY KEY (id)
+);
+
+create temporary table temp_wire_information (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  brand_id int(10) unsigned NOT NULL,
+  currency_id int(10) unsigned NOT NULL,
+  psp_id int(10) NOT NULL,
+  beneficiary_name varchar(45) NOT NULL,
+  bank_name varchar(45) NOT NULL,
+  bank_address varchar(100) NOT NULL,
+  swift varchar(45) NOT NULL,
+  account_number varchar(45) NOT NULL,
+  iban varchar(45) NOT NULL,
+  intermediary_bank varchar(45) DEFAULT NULL,
+  bic varchar(45) DEFAULT NULL,
+  sorting_code varchar(45) DEFAULT NULL,
+  beneficiary_address varchar(100) DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+
+create temporary table temp_account_level (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  name varchar(45) NOT NULL,
+  percentage smallint(5) unsigned NOT NULL DEFAULT '0',
+  exposure double unsigned NOT NULL DEFAULT '0',
+  `limit` double unsigned NOT NULL DEFAULT '0',
+  is_required tinyint(4) NOT NULL DEFAULT '0',
+  min_deal_size int(11) NOT NULL DEFAULT '0',
+  fx_spread_bonus int(11) NOT NULL DEFAULT '0',
+  deposit_limit double NOT NULL DEFAULT '1',
+  PRIMARY KEY (id)
+);
+
+create temporary table temp_sub_market_country_brand_rel (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  sub_market_id int(10) unsigned NOT NULL,
+  country_iso char(2) DEFAULT NULL,
+  brand_id int(10) unsigned NOT NULL,
+  item_order int(10) unsigned NOT NULL,
+  PRIMARY KEY (id)
+);
+
+create temporary table temp_asset_country_brand_rel (
+  id int(10) unsigned NOT NULL AUTO_INCREMENT,
+  asset_id int(10) unsigned NOT NULL,
+  country_iso char(2) DEFAULT NULL,
+  brand_id int(10) unsigned NOT NULL,
+  item_order int(10) unsigned NOT NULL,
+  site_default bit(1) NOT NULL DEFAULT b'1',
+  PRIMARY KEY (id)
+);
+	  </query>
+	</step>
+	
+	
+	
+	<step action_type="executeSQL" connection_name="connectionImport" description="Setting up SQL variables">
+	  <query>
+	  set @wrap_data='{wrap}';
+	  set @newBrandId='{brand_id}';
+	  set @newBrandName='{brand_name}';
+	  set @newBrandIdentifier='{brand_identifier}';
+	  set @newBrandOperatorId='{operator_id}';
+	  
+	  set @mail_host='smtp.gmail.com';
+	  set @mail_username='support@optionfair.com';
+	  set @mail_password='supp3e4r';
+	  set @mail_host_noreply='smtp.gmail.com';
+	  set @mail_username_noreply='nsupport@optionfair.com';
+	  set @mail_password_noreply='supp3e4r';
+	  set @mail_display_name_noreply='nr_support@optionfair.com';
+	  set autocommit=0;
+	  </query>
+	</step>
+	
+	<step action_type="loadSQLDataFromXML" connection_name="connectionImport" file_name="{file_name}" description="Loading data from {file_name} to temporary tables"></step>
+	
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table brand">
+	  <query>
+	    insert into brand
+	    (id, operator_id, name, type, cpa, revshare, turnover, identifier, gn_tc,page_load_gn_tc, reg_service_url, mail_host, mail_username, mail_password, mail_display_name, send_mails, default_skin, demo_account_days, customer_demo_start_balance, employee_demo_start_balance, send_secured_mails, deposit_amount_required_doc, num_days_till_deactivate, withdrawal_life_expectancy, login_attemps_for_captcha, assign_lead_to_default, mail_host_noreply, mail_username_noreply, mail_password_noreply, mail_display_name_noreply, server_name, is_active)
+	    select if(@newBrandId='None', id, @newBrandId), if(@newBrandOperatorId='None', operator_id, @newBrandOperatorId), if(@newBrandName='None', name, @newBrandName), type, cpa, revshare, turnover, if(@newBrandIdentifier='None', identifier, @newBrandIdentifier), gn_tc,page_load_gn_tc, reg_service_url, if(@wrap_data='True', @mail_host, mail_host) as mail_host, if(@wrap_data='True', @mail_username, mail_username) as mail_username, if(@wrap_data='True', @mail_password, mail_password), mail_display_name, send_mails, default_skin, demo_account_days, customer_demo_start_balance, employee_demo_start_balance, send_secured_mails, deposit_amount_required_doc, num_days_till_deactivate, withdrawal_life_expectancy, login_attemps_for_captcha, assign_lead_to_default, if(@wrap_data='True', @mail_host_noreply, mail_host_noreply) as mail_host_noreply, if(@wrap_data='True', @mail_username_noreply, mail_username_noreply) as mail_username_noreply, if(@wrap_data='True', @mail_password_noreply, mail_password_noreply) as mail_password_noreply, if(@wrap_data='True', @mail_display_name_noreply, mail_display_name_noreply) as mail_display_name_noreply, server_name, is_active
+	    from temp_brand t
+            on duplicate key update
+             operator_id  =  if(@newBrandOperatorId='None', t.operator_id, @newBrandOperatorId),
+             name  =  if(@newBrandName='None', t.name, @newBrandName),
+             type  =  t.type,
+             cpa  =  t.cpa,
+             revshare  =  t.revshare,
+             turnover  =  t.turnover,
+             identifier  =  if(@newBrandIdentifier='None', t.identifier, @newBrandIdentifier),
+             gn_tc  = t.gn_tc,
+             page_load_gn_tc  = t.page_load_gn_tc,
+             reg_service_url  = t.reg_service_url,
+             mail_host  =  if(@wrap_data='True', @mail_host, t.mail_host),
+             mail_username  =  if(@wrap_data='True', @mail_username, t.mail_username),
+             mail_password  =  if(@wrap_data='True', @mail_password, t.mail_password),
+             mail_display_name  = t.mail_display_name,
+             send_mails  = t.send_mails,
+             default_skin  = t.default_skin,
+             demo_account_days  = t.demo_account_days,
+             customer_demo_start_balance  = t.customer_demo_start_balance,
+             employee_demo_start_balance  = t.employee_demo_start_balance,
+             send_secured_mails  = t.send_secured_mails,
+             deposit_amount_required_doc  = t.deposit_amount_required_doc,
+             num_days_till_deactivate  = t.num_days_till_deactivate,
+             withdrawal_life_expectancy  = t.withdrawal_life_expectancy,
+             login_attemps_for_captcha  = t.login_attemps_for_captcha,
+             assign_lead_to_default  = t.assign_lead_to_default,
+             mail_host_noreply  =  if(@wrap_data='True', @mail_host_noreply, t.mail_host_noreply),
+             mail_username_noreply  =  if(@wrap_data='True', @mail_username_noreply, t.mail_username_noreply),
+             mail_password_noreply  =  if(@wrap_data='True', @mail_password_noreply, t.mail_password_noreply),
+             mail_display_name_noreply  =  if(@wrap_data='True', @mail_display_name_noreply, t.mail_display_name_noreply),
+             server_name  =  t.server_name,
+             is_active  =  t.is_active;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table brand_psp_rel">
+	  <query>
+	    insert into brand_psp_rel
+	    (psp_id, brand_id, psp_merchant_params, merchant_id, merchant_key, sort, priority)
+	    select psp_id, if(@newBrandId='None', brand_id, @newBrandId) as brand_id, if(@wrap_data='True', NULL, psp_merchant_params) as psp_merchant_params, if(@wrap_data='True', NULL, merchant_id) as merchant_id, if(@wrap_data='True', NULL, merchant_key) as merchant_key, sort, priority
+	    from temp_brand_psp_rel t left outer join brand_psp_rel o on (o.psp_id = t.psp_id and o.brand_id = t.brand_id)
+	    where o.psp_id is null;
+	    update brand_psp_rel o inner join temp_brand_psp_rel t on (t.brand_id = o.brand_id and t.psp_id = o.psp_id)
+	    set o.psp_id = t.psp_id,
+	        o.brand_id = t.brand_id,
+	        o.psp_merchant_params = t.psp_merchant_params,
+	        o.merchant_id = t.merchant_id,
+	        o.merchant_key = t.merchant_key,
+	        o.sort = t.sort,
+	        o.priority = t.priority;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table brand_skin_rel">
+	  <query>
+	    insert into brand_skin_rel
+	    (brand_id, skin, controlled_by_user, jsp, lead_jsp, has_news)
+	    select if(@newBrandId='None', t.brand_id, @newBrandId) as brand_id, t.skin, t.controlled_by_user, t.jsp, t.lead_jsp, t.has_news
+	    from temp_brand_skin_rel t left outer join brand_skin_rel o on (t.brand_id = o.brand_id and t.skin = o.skin)
+	    where o.brand_id is null;
+	    update brand_skin_rel o left outer join temp_brand_skin_rel t on (t.brand_id = o.brand_id and t.skin = o.skin)
+	    set o.brand_id = if(@newBrandId='None', t.brand_id, @newBrandId),
+                o.skin = t.skin,
+                o.controlled_by_user = t.controlled_by_user,
+                o.jsp = t.jsp,
+                o.lead_jsp = t.lead_jsp,
+                o.has_news = t.has_news;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing currencies if those are not exists">
+	  <query>
+	    insert into currency(currency_id, symbol, display_name, display_symbol, Normalized_to_usd, asset_id_for_normalize, normalize_type)
+	    select tc.currency_id, tc.symbol, tc.display_name, tc.display_symbol, tc.Normalized_to_usd, tc.asset_id_for_normalize, tc.normalize_type
+	    from temp_currency tc 
+	    on duplicate key update
+	       symbol = tc.symbol,
+	       display_name = tc.display_name,
+	       display_symbol = tc.display_symbol,
+	       Normalized_to_usd = tc.Normalized_to_usd,
+	       asset_id_for_normalize = tc.asset_id_for_normalize,
+	       normalize_type = tc.normalize_type;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table currency_brand_rel">
+	  <query>
+	    insert into currency_brand_rel
+	    (currency_id, brand_id)
+	    select t.currency_id, t.brand_id
+	    from temp_currency_brand_rel t left outer join currency_brand_rel o on (t.currency_id = o.currency_id and t.brand_id = o.brand_id)
+	    where o.brand_id is null;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table brand_regulation_rel">
+	  <query>
+	    insert into brand_regulation_rel
+	    (brand_id, regulation, withdrawal_policy, max_total_deposit_policy)
+	    select t.brand_id, t.regulation, t.withdrawal_policy, t.max_total_deposit_policy
+	    from temp_brand_regulation_rel t
+	    on duplicate key update
+	       o.brand_id = tc.brand_id,
+	       o.regulation = tc.regulation,
+	       o.withdrawal_policy = tc.withdrawal_policy,
+	       o.max_total_deposit_policy = tc.max_total_deposit_policy;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table instrument_type_instrument_type_super_rel">
+	  <query>
+	    insert into instrument_type_instrument_type_super_rel
+	    (instrument_type_id, instrument_type_super_id, brand_id, sort)
+	    select instrument_type_id, instrument_type_super_id, brand_id, sort
+	    from temp_instrument_type_instrument_type_super_rel t left outer join instrument_type_instrument_type_super_rel o 
+	              on (t.instrument_type_id = o.instrument_type_id and  t.instrument_type_super_id = o.instrument_type_super_id and t.brand_id = o.brand_id)
+            where o.brand_id is null;
+	    update instrument_type_instrument_type_super_rel o inner join temp_instrument_type_instrument_type_super_rel t
+	              on (t.instrument_type_id = o.instrument_type_id and  t.instrument_type_super_id = o.instrument_type_super_id and t.brand_id = o.brand_id)
+              set o.sort = t.sort;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table language_brand_rel">
+	  <query>
+	    insert into language_brand_rel
+	    (brand_id, language_id)
+	    select brand_id, language_id
+	    from temp_language_brand_rel t left outer join language_brand_rel o on (t.brand_id = o.brand_id and t.language_id = o.language_id)
+	    where o.brand_id is null;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table currency_country_limit">
+	  <query>
+	    insert into currency_country_limit
+	    (currency_id, country_iso, min_highlow_trade_amount, max_highlow_trade_amount, min_onetouch_trade_amount, max_onetouch_trade_amount, min_boundary_trade_amount, max_boundary_trade_amount, max_user_exposure, min_deposit, min_withdraw, min_withdraw_for_fee, brand_id, max_daily_deposit, max_weekly_deposit, max_monthly_deposit, min_ftd_deposit , min_highyield_trade_amount, max_highyield_trade_amount)
+	    select currency_id, country_iso, min_highlow_trade_amount, max_highlow_trade_amount, min_onetouch_trade_amount, max_onetouch_trade_amount, min_boundary_trade_amount, max_boundary_trade_amount, max_user_exposure, min_deposit, min_withdraw, min_withdraw_for_fee, brand_id, max_daily_deposit, max_weekly_deposit, max_monthly_deposit, min_ftd_deposit , min_highyield_trade_amount, max_highyield_trade_amount
+	    from temp_currency_country_limit t left outer join currency_country_limit o on (t.brand_id = o.brand_id and t.currency_id = o.currency_id and t.country_iso = o.country_iso)
+	    where o.brand_id is null;
+	    update currency_country_limit o inner join temp_currency_country_limit t on (t.brand_id = o.brand_id and t.currency_id = o.currency_id and t.country_iso = o.country_iso)
+	       set o.min_highlow_trade_amount = t.min_highlow_trade_amount,
+                   o.max_highlow_trade_amount = t.max_highlow_trade_amount,
+                   o.min_onetouch_trade_amount = t.min_onetouch_trade_amount,
+                   o.max_onetouch_trade_amount = t.max_onetouch_trade_amount,
+                   o.min_boundary_trade_amount = t.min_boundary_trade_amount,
+                   o.max_boundary_trade_amount = t.max_boundary_trade_amount,
+                   o.max_user_exposure = t.max_user_exposure,
+                   o.min_deposit = t.min_deposit,
+                   o.min_withdraw = t.min_withdraw,
+                   o.min_withdraw_for_fee = t.min_withdraw_for_fee,
+                   o.max_daily_deposit = t.max_daily_deposit,
+                   o.max_weekly_deposit = t.max_weekly_deposit,
+                   o.max_monthly_deposit = t.max_monthly_deposit,
+                   o.min_ftd_deposit  = t.min_ftd_deposit ,
+                   o.min_highyield_trade_amount = t.min_highyield_trade_amount,
+                   o.max_highyield_trade_amount = t.max_highyield_trade_amount;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing account levels">
+	  <query>
+	    lock tables account_level write, account_level_brand_rel write;
+
+	    select auto_increment-1 into @account_level_last_id
+	    from  information_schema.tables
+	    where table_schema = 'optionfair_trading'
+	    and table_name   = 'account_level';
+
+	    insert into account_level(name,percentage,exposure,`limit`,is_required,min_deal_size,fx_spread_bonus,deposit_limit)
+	    select al.name,al.percentage,al.exposure,al.limit,al.is_required,al.min_deal_size,al.fx_spread_bonus,al.deposit_limit
+	    from temp_account_level al left outer join account_level o on o.name = al.name
+	    where o.id is null;
+	    
+	    update account_level o inner join temp_account_level t on t.name = o.name
+	       set o.al.percentage = t.al.percentage,
+                   o.al.exposure = t.al.exposure,
+                   o.al.limit = t.al.limit,
+                   o.al.is_required = t.al.is_required,
+                   o.al.min_deal_size = t.al.min_deal_size,
+                   o.al.fx_spread_bonus = t.al.fx_spread_bonus,
+                   o.al.deposit_limit = t.al.deposit_limit;
+
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table account_level_brand_rel">
+	  <query>
+	    insert into account_level_brand_rel
+	    (brand_id, account_level_id)
+	    select alt.brand_id, ral.id -- @account_level_last_id:=@account_level_last_id+1 as account_level_id
+	    from temp_account_level_brand_rel talb inner join temp_account_level ta on tal.account_level_id = talb.id
+	                                          inner join account_level ral on ral.name = tal.name
+						  left outer join account_level_brand_rel ralb on ralb.id = ral.id
+            where ralb.id is null;
+	    
+	    unlock tables;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table wire_information">
+	  <query>
+	    insert into wire_information
+	    (brand_id, currency_id, psp_id, beneficiary_name, bank_name, bank_address, swift, account_number, iban, intermediary_bank, bic, sorting_code)
+	    select t.brand_id, t.currency_id, t.psp_id, t.beneficiary_name, t.bank_name, t.bank_address, t.swift, t.account_number, t.iban, t.intermediary_bank, t.bic, t.sorting_code
+	    from temp_wire_information t left outer join wire_information o on (t.brand_id = o.brand_id and t.currency_id = o.currency_id and t.psp_id = o.psp_id)
+	    where o.brand_id is null;
+	    
+	    update wire_information o inner join temp_wire_information t on (t.brand_id = o.brand_id and t.currency_id = o.currency_id and t.psp_id = o.psp_id)
+	       set o.brand_id = t.brand_id,
+                   o.currency_id = t.currency_id,
+                   o.psp_id = t.psp_id,
+                   o.beneficiary_name = t.beneficiary_name,
+                   o.bank_name = t.bank_name,
+                   o.bank_address = t.bank_address,
+                   o.swift = t.swift,
+                   o.account_number = t.account_number,
+                   o.iban = t.iban,
+                   o.intermediary_bank = t.intermediary_bank,
+                   o.bic = t.bic,
+                   o.sorting_code = t.sorting_code;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table sub_market_country_brand_rel">
+	  <query>
+	    insert into sub_market_country_brand_rel
+	    (sub_market_id, country_iso, brand_id, item_order)
+	    select t.sub_market_id, t.country_iso, t.brand_id, t.item_order
+	    from temp_sub_market_country_brand_rel t left outer join sub_market_country_brand_rel o on (t.sub_market_id = o.sub_market_id and t.country_iso = o.country_iso and t.brand_id = o.brand_id)
+	    where o.brand_id id null;
+	    
+	    update sub_market_country_brand_rel o inner join temp_sub_market_country_brand_rel t on (t.sub_market_id = o.sub_market_id and t.country_iso = o.country_iso and t.brand_id = o.brand_id)
+	       set o.item_order = t.item_order;
+	  </query>
+	</step>
+
+	<step action_type="executeSQL" connection_name="connectionImport" description="Importing to table asset_country_brand_rel">
+	  <query>
+	    insert into asset_country_brand_rel
+	    (asset_id, country_iso, brand_id, item_order, site_default)
+	    select t.asset_id, t.country_iso, t.brand_id, t.item_order, t.site_default
+	    from temp_asset_country_brand_rel t left outer join asset_country_brand_rel o on (t.asset_id = o.asset_id and t.country_iso = o.country_iso and t.brand_id = o.brand_id)
+	    where o.brand_id is null;
+	    
+	    update asset_country_brand_rel o inner join temp_asset_country_brand_rel t on (t.asset_id = o.asset_id and t.country_iso = o.country_iso and t.brand_id = o.brand_id)
+	       set o.item_order = t.item_order,
+	           o.site_default = t.site_default;
+	  </query>
+	</step>
+
+	
+	<step action_type="executeSQL" connection_name="connectionImport" description="Commiting">
+	 <query>
+	   commit;
+	   set autocommit=1;
+	 </query>
+	</step>
+
+	
+</actions>
