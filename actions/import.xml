@@ -268,7 +268,40 @@ create temporary table temp_asset_country_brand_rel (
 	    insert into brand
 	    (id, operator_id, name, type, cpa, revshare, turnover, identifier, gn_tc,page_load_gn_tc, reg_service_url, mail_host, mail_username, mail_password, mail_display_name, send_mails, default_skin, demo_account_days, customer_demo_start_balance, employee_demo_start_balance, send_secured_mails, deposit_amount_required_doc, num_days_till_deactivate, withdrawal_life_expectancy, login_attemps_for_captcha, assign_lead_to_default, mail_host_noreply, mail_username_noreply, mail_password_noreply, mail_display_name_noreply, server_name, is_active)
 	    select if(@newBrandId='None', id, @newBrandId), if(@newBrandOperatorId='None', operator_id, @newBrandOperatorId), if(@newBrandName='None', name, @newBrandName), type, cpa, revshare, turnover, if(@newBrandIdentifier='None', identifier, @newBrandIdentifier), gn_tc,page_load_gn_tc, reg_service_url, if(@wrap_data='True', @mail_host, mail_host) as mail_host, if(@wrap_data='True', @mail_username, mail_username) as mail_username, if(@wrap_data='True', @mail_password, mail_password), mail_display_name, send_mails, default_skin, demo_account_days, customer_demo_start_balance, employee_demo_start_balance, send_secured_mails, deposit_amount_required_doc, num_days_till_deactivate, withdrawal_life_expectancy, login_attemps_for_captcha, assign_lead_to_default, if(@wrap_data='True', @mail_host_noreply, mail_host_noreply) as mail_host_noreply, if(@wrap_data='True', @mail_username_noreply, mail_username_noreply) as mail_username_noreply, if(@wrap_data='True', @mail_password_noreply, mail_password_noreply) as mail_password_noreply, if(@wrap_data='True', @mail_display_name_noreply, mail_display_name_noreply) as mail_display_name_noreply, server_name, is_active
-	    from temp_brand;
+	    from temp_brand
+            on duplicate key update
+             operator_id  =  if(@newBrandOperatorId='None', operator_id, @newBrandOperatorId),
+             name  =  if(@newBrandName='None', name, @newBrandName),
+             type  =  type,
+             cpa  =  cpa,
+             revshare  =  revshare,
+             turnover  =  turnover,
+             identifier  =  if(@newBrandIdentifier='None', identifier, @newBrandIdentifier),
+             gn_tc  =  gn_tc,
+             page_load_gn_tc  =  page_load_gn_tc,
+             reg_service_url  =  reg_service_url,
+             mail_host  =  if(@wrap_data='True', @mail_host, mail_host),
+             mail_username  =  if(@wrap_data='True', @mail_username, mail_username),
+             mail_password  =  if(@wrap_data='True', @mail_password, mail_password),
+             mail_display_name  =  mail_display_name,
+             send_mails  =  send_mails,
+             default_skin  =  default_skin,
+             demo_account_days  =  demo_account_days,
+             customer_demo_start_balance  =  customer_demo_start_balance,
+             employee_demo_start_balance  =  employee_demo_start_balance,
+             send_secured_mails  =  send_secured_mails,
+             deposit_amount_required_doc  =  deposit_amount_required_doc,
+             num_days_till_deactivate  =  num_days_till_deactivate,
+             withdrawal_life_expectancy  =  withdrawal_life_expectancy,
+             login_attemps_for_captcha  =  login_attemps_for_captcha,
+             assign_lead_to_default  =  assign_lead_to_default,
+             mail_host_noreply  =  if(@wrap_data='True', @mail_host_noreply, mail_host_noreply),
+             mail_username_noreply  =  if(@wrap_data='True', @mail_username_noreply, mail_username_noreply),
+             mail_password_noreply  =  if(@wrap_data='True', @mail_password_noreply, mail_password_noreply),
+             mail_display_name_noreply  =  if(@wrap_data='True', @mail_display_name_noreply, mail_display_name_noreply),
+             server_name  =  server_name,
+             is_active  =  is_active 
+;
 	  </query>
 	</step>
 
